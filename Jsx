@@ -1,0 +1,91 @@
+// App.jsx
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
+export default function RecipeScaler() {
+  const [recipe, setRecipe] = useState("");
+  const [servings, setServings] = useState(1);
+  const [result, setResult] = useState(null);
+
+  const generatePrepList = () => {
+    const lines = recipe.split("\n").filter((l) => l.trim() !== "");
+    const ingredients = [];
+
+    lines.forEach((line) => {
+      const match = line.match(/([\d/.]+)\s*(\w*)\s*(.+)/);
+      if (match) {
+        let qty = eval(match[1]) * servings;
+        let unit = match[2];
+        let item = match[3];
+        ingredients.push({ qty, unit, item });
+      } else {
+        ingredients.push({ qty: "-", unit: "", item: line });
+      }
+    });
+
+    // simple prep grouping by ingredient keyword
+    const prepTasks = ingredients.map((ing) => {
+      if (ing.item.toLowerCase().includes("onion"))
+        return `Chop ${ing.qty} ${ing.unit} ${ing.item}`;
+      if (ing.item.toLowerCase().includes("tomato"))
+        return `Dice ${ing.qty} ${ing.unit} ${ing.item}`;
+      if (ing.item.toLowerCase().includes("chicken"))
+        return `Cut ${ing.qty} ${ing.unit} ${ing.item} into pieces`;
+      return `Prepare ${ing.qty} ${ing.unit} ${ing.item}`;
+    });
+
+    setResult({ ingredients, prepTasks });
+  };
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Recipe Ingredient & Prep Calculator</h1>
+
+      <Textarea
+        placeholder="Enter recipe (e.g. 2 onions, 3 tomatoes, 500g chicken)..."
+        className="mb-3"
+        value={recipe}
+        onChange={(e) => setRecipe(e.target.value)}
+      />
+      <Input
+        type="number"
+        placeholder="Number of servings"
+        className="mb-3"
+        value={servings}
+        onChange={(e) => setServings(e.target.value)}
+      />
+      <Button onClick={generatePrepList}>Generate</Button>
+
+      {result && (
+        <div className="mt-6 grid gap-4">
+          <Card>
+            <CardContent>
+              <h2 className="font-semibold mb-2">Ingredients Needed:</h2>
+              <ul className="list-disc list-inside">
+                {result.ingredients.map((ing, i) => (
+                  <li key={i}>
+                    {ing.qty} {ing.unit} {ing.item}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent>
+              <h2 className="font-semibold mb-2">Prep List:</h2>
+              <ul className="list-disc list-inside">
+                {result.prepTasks.map((task, i) => (
+                  <li key={i}>{task}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
